@@ -1,6 +1,7 @@
 // scripts/groovy/listeners/OnIssueUpdated.groovy
 import com.atlassian.jira.event.issue.IssueEvent
 import org.slf4j.LoggerFactory
+import com.onresolve.scriptrunner.runner.util.AuditLogger
 
 // Named logger so we can easily enable it in Logging & profiling
 def logger = LoggerFactory.getLogger("SRDEV.OnIssueUpdated")
@@ -25,7 +26,11 @@ try {
 logger.info("[SR-DEV ${versionTag}] Issue updated: ${key} by ${who}")
 log.warn("[SR-DEV ${versionTag}] Issue updated: ${key} by ${who}")
 
-// Optional: ScriptRunner audit log (visible in SR admin)
+// --- ScriptRunner audit log (type-checker friendly) ---
+AuditLogger audit = null
 if (binding.hasVariable('auditLog')) {
-    auditLog.info("OnIssueUpdated: ${key} by ${who} (version=${versionTag})")
+    audit = binding.getVariable('auditLog') as AuditLogger
+}
+if (audit != null) {
+    audit.info("OnIssueUpdated: ${key} by ${who} (version=${versionTag})")
 }
