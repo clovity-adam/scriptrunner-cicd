@@ -13,19 +13,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Join your tailnet so SSH/rsync/scp can reach rhel-jira-02
+      # Install Tailscale on the GitHub-hosted runner
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      # Bring this runner onto your tailnet
       - name: Tailscale up
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: stable
+        env:
+          TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+        run: |
+          sudo tailscaled &
+
+          # Give tailscaled a moment to start
+          sleep 5
+
+          # Join the tailnet; hostname is just for identification
+          sudo tailscale up \
+            --authkey="${TS_AUTHKEY}" \
+            --hostname="gh-actions-${GITHUB_RUN_ID}" \
+            --ssh=false
+
+          echo "Tailscale status:"
+          sudo tailscale status
 
       - name: Deploy ScriptRunner artifact
         env:
-          SSH_HOST: rhel-jira-02                 # host reachable via Tailscale
-          SSH_USER: root                         # or a non-root account with write access to shared home
+          SSH_HOST: rhel-jira-02          # Tailscale name or TS IP
+          SSH_USER: root                  # or service account
           SHARED_HOME: /mnt/jira_shared
           RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
-          # Route SSH over Tailscale; accept host key on first connect
+          # Route SSH over Tailscale and accept host key on first connect
           SSH_OPTS: -o ProxyCommand="tailscale nc %h %p" -o StrictHostKeyChecking=accept-new
         run: bash ops/deploy.sh
