@@ -13,35 +13,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Install Tailscale on the GitHub-hosted runner
       - name: Install Tailscale
         run: |
           curl -fsSL https://tailscale.com/install.sh | sh
 
-      # Bring this runner onto your tailnet
       - name: Tailscale up
         env:
           TS_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
         run: |
           sudo tailscaled &
-
-          # Give tailscaled a moment to start
           sleep 5
-
-          # Join the tailnet; hostname is just for identification
           sudo tailscale up \
             --authkey="${TS_AUTHKEY}" \
             --hostname="gh-actions-${GITHUB_RUN_ID}" \
             --ssh=false
-
-          echo "Tailscale status:"
           sudo tailscale status
+
+      # 🔑 SSH key setup for this job
+      - name: Setup SSH key
+        env:
+          SSH_HOST: rhel-jira-02
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Pre-populate known_hosts so StrictHostKeyChecking can be on
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Deploy ScriptRunner artifact
         env:
-            SSH_HOST: rhel-jira-02
-            SSH_USER: root                   # or service account
-            SHARED_HOME: /mnt/jira_shared
-            RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
-            SSH_OPTS: -o StrictHostKeyChecking=accept-new
+          SSH_HOST: rhel-jira-02      # hostname works because of Tailscale
+          SSH_USER: root              # or jira_deploy, etc.
+          SHARED_HOME: /mnt/jira_shared
+          RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
+          SSH_OPTS: -o StrictHostKeyChecking=yes
         run: bash ops/deploy.sh
