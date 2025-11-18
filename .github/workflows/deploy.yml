@@ -1,4 +1,4 @@
-name: Deploy ScriptRunner (DEV via Tailscale)
+name: Deploy ScriptRunner Scripts (Test via Tailscale)
 
 on:
   push:
@@ -8,33 +8,24 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Bring this runner onto your tailnet
+      # Join your tailnet so SSH/rsync/scp can reach rhel-jira-02
       - name: Tailscale up
         uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          # If you use MagicDNS, add your tailnet's domain; otherwise use the node's Tailscale IP
           version: stable
 
-      # Optional pack; we deploy the raw scripts directory regardless
-      - name: Package (optional)
-        run: bash ops/pack.sh || true
-
-      - name: Deploy to Shared Home via Tailscale
+      - name: Deploy ScriptRunner artifact
         env:
-          # Your Jira node or any host that can write to /mnt/jira_shared
-          SSH_HOST: rhel-jira-02   # or the node's Tailscale IP
-          SSH_USER: root
+          SSH_HOST: rhel-jira-02                 # host reachable via Tailscale
+          SSH_USER: root                         # or a non-root account with write access to shared home
           SHARED_HOME: /mnt/jira_shared
           RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
-          # Route ssh/rsync over Tailscale
+          # Route SSH over Tailscale; accept host key on first connect
           SSH_OPTS: -o ProxyCommand="tailscale nc %h %p" -o StrictHostKeyChecking=accept-new
         run: bash ops/deploy.sh
