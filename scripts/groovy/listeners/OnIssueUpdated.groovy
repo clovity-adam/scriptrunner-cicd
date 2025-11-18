@@ -24,9 +24,3 @@ try {
 // Log to file (via SRDEV logger) and to ScriptRunner’s listener log
 logger.info("[SR-DEV ${versionTag}] Issue updated: ${key} by ${who}")
 log.warn("[SR-DEV ${versionTag}] Issue updated: ${key} by ${who}")
-
-// --- ScriptRunner audit log, without type-checker complaints ---
-def audit = binding.hasVariable('auditLog') ? binding.getVariable('auditLog') : null
-if (audit != null) {
-    audit.info("OnIssueUpdated: ${key} by ${who} (version=${versionTag})")
-}
