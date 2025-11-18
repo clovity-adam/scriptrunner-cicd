@@ -39,10 +39,9 @@ jobs:
 
       - name: Deploy ScriptRunner artifact
         env:
-          SSH_HOST: rhel-jira-02          # Tailscale name or TS IP
-          SSH_USER: root                  # or service account
-          SHARED_HOME: /mnt/jira_shared
-          RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
-          # Route SSH over Tailscale and accept host key on first connect
-          SSH_OPTS: -o ProxyCommand="tailscale nc %h %p" -o StrictHostKeyChecking=accept-new
+            SSH_HOST: rhel-jira-02
+            SSH_USER: root                   # or service account
+            SHARED_HOME: /mnt/jira_shared
+            RELEASE_VER: ${{ github.run_number }}-${{ github.sha }}
+            SSH_OPTS: -o StrictHostKeyChecking=accept-new
         run: bash ops/deploy.sh
