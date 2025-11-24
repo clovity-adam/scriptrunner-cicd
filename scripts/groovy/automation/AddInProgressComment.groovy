@@ -10,7 +10,7 @@ def commentManager = ComponentAccessor.commentManager
 
 def msg = "SR demo: issue moved to In Progress at ${new Date()}"
 
-// Add a comment
+// Add a new comment
 commentManager.create(iss, user, msg, false)
 
 // Log for debugging
