@@ -2,7 +2,7 @@
 import com.atlassian.jira.event.issue.IssueEvent
 import org.slf4j.LoggerFactory
 
-// Named logger so we can easily enable it in Logging & profiling
+// Named logger so we can easily enable it in Admin -> Logging & profiling
 def logger = LoggerFactory.getLogger("SRDEV.OnIssueUpdated")
 
 // Get the event object from the binding
